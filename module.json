@@ -1,0 +1,17 @@
+{
+    "name": "Workflow",
+    "alias": "workflow",
+    "description": "",
+    "keywords": [],
+    "active": 1,
+    "order": 1,
+    "providers": [
+        "Modules\\Workflow\\Providers\\WorkflowServiceProvider",
+        "Modules\\Workflow\\Providers\\RouteServiceProvider"
+    ],
+    "aliases": {},
+    "files": [
+        "helpers.php"
+    ],
+    "requires": []
+}
