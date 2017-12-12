@@ -11,10 +11,6 @@
     </ol>
 @stop
 
-@section('styles')
-    {!! Theme::script('js/vendor/ckeditor/ckeditor.js') !!}
-@stop
-
 
 @section('footer')
     <a data-toggle="modal" data-target="#keyboardShortcutsModal"><i class="fa fa-keyboard-o"></i></a> &nbsp;
@@ -26,7 +22,59 @@
     </dl>
 @stop
 
+
+@section('content')
+    <div class="row">
+        <div class="col-md-12">
+            <div class="box box-primary">
+            <div class="box-header with-border">
+                <h3 class="box-title">New Request</h3>
+                <div class="box-tools pull-right">
+                    <!-- Buttons, labels, and many other things can be placed here! -->
+                    <!-- Here is a label for example -->
+                    <span class="label label-primary">Label</span>
+                </div>
+                <!-- /.box-tools -->
+            </div>
+            {!!
+                Former::horizontal_open()
+                    ->route('admin.workflow.requesttype.store')
+                    ->method('post')
+            !!}
+            <div class="box-body">
+
+                {{   csrf_field() }}
+                @include('workflow::admin.requesttypes.partials.create-fields')
+
+            </div>
+
+            <div class="box-footer">
+                <button type="submit" class="btn btn-primary pull-right">Save</button>
+            </div>
+            {!!
+               Former::close()
+            !!}
+
+        </div>
+        </div>
+    </div>
+@stop
+
+
+
 @section('scripts')
+
+    <script type="text/javascript">
+
+        function initializeUI() {
+            $('select').select2({
+                allowClear: true,
+                placeholder: $(this).data('placeholder')
+            });
+        }
+
+    </script>
+
     <script type="text/javascript">
         $( document ).ready(function() {
             $(document).keypressAction({
@@ -35,13 +83,8 @@
                 ]
             });
         });
-    </script>
-    <script>
-        $( document ).ready(function() {
-            $('input[type="checkbox"].flat-blue, input[type="radio"].flat-blue').iCheck({
-                checkboxClass: 'icheckbox_flat-blue',
-                radioClass: 'iradio_flat-blue'
-            });
-        });
+
+        initializeUI();
+
     </script>
 @stop

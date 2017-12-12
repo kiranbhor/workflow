@@ -6,8 +6,14 @@ use App\Exceptions\CustomErrorException;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Modules\Core\Repositories\Eloquent\EloquentBaseRepository;
+use Modules\Master\Repositories\EmployeeRepository;
+use Modules\User\Repositories\UserRepository;
+use Modules\Workflow\Entities\Workflow;
+use Modules\Workflow\Repositories\RequestTypeRepository;
+use Modules\Workflow\Repositories\WorkflowLogRepository;
 use Modules\Workflow\Repositories\WorkflowRepository;
-use Modules\Workflow\Services\Workflow;
+use DataTables;
+use Modules\Workflow\Workflows\WorkflowService;
 
 class EloquentWorkflowRepository extends EloquentBaseRepository implements WorkflowRepository
 {
@@ -25,38 +31,121 @@ class EloquentWorkflowRepository extends EloquentBaseRepository implements Workf
      * @return mixed
      * @throws \Exception
      */
-    public function createRequest($assignedBy, $requestTypeId, $refRequestId, $userNote, $requestText, $requestData, $assignedTo, $statusId = null)
+    public function createRequest($assignedBy, $requestTypeId, $refRequestId, $userNote, $requestText, $requestData, $assignedTo = null, $statusId = null)
     {
         try {
 
-            $requestType = app(getRepoName('RequestType', 'Workflow'))->find($requestTypeId);
+            $requestType = app(RequestTypeRepository::class)->find($requestTypeId);
 
-            //Create new workflow request
-            $workflowRequest = array(
-                'request_type_id' => $requestType->id,
-                'request_ref_id' => $refRequestId,
-                'request_status_id' => ($statusId == null) ? $requestType->initial_request_status_id : $statusId,
-                'assigned_to_user_id' => ($assignedTo == null) ? $requestType->default_assignee_user_id : $assignedTo->id,
-                'requester_id' => $assignedBy->id,
-                'request_workflow_status_id' => ($statusId == null) ? $requestType->initial_request_status_id : $statusId,
-                'request_date' => Carbon::now(),
-                'is_expired' => false,
-                'created_by' => $assignedBy->id,
-                'user_note' => $userNote,
-                'request_text' => $requestText,
-                'is_open' => true,
-                'datetime_added' => Carbon::now(),
-                'request_data' => json_encode($requestData),
-            );
+            $workflow = new Workflow();
 
-            //Create workflow request object
-            $objWorkflow = $this->create($workflowRequest);
+            $workflow->request_type_id = $requestType->id;
+            $workflow->request_ref_id = $refRequestId;
 
-            return $objWorkflow;
+            if($statusId === null){
+                $workflow->request_status_id = $requestType->initial_request_status_id;
+            }
+            else{
+                $workflow->request_status_id = $statusId;
+            }
+
+            if($assignedTo === null){
+                $workflow->assigned_to_user_id = $requestType->default_assignee_user_id;
+            }
+            else{
+                $workflow->assigned_to_user_id = $assignedTo->id;
+            }
+
+            if($workflow->assigned_to_user_id === null){
+                $workflow->assigned_to_designation_id = $requestType->default_designation_id;
+            }
+
+            if($workflow->assigned_to_designation_id === null){
+                $workflow->assigned_to_department_id = $requestType->default_dept_id;
+            }
+
+            $workflow->requester_id = $assignedBy->id;
+            $workflow->request_workflow_status_id = ($statusId === null)?$requestType->initial_request_status_id:$statusId;
+            $workflow->request_date = Carbon::now();
+            $workflow->is_expired = false;
+            $workflow->user_note =  $userNote;
+            $workflow->supervisor_note = "";
+            $workflow->request_text = $requestText;
+            $workflow->datetime_added = Carbon::now();
+            $workflow->is_open = true;
+            $workflow->request_data = json_encode($requestData);
+            $workflow->assignee_comment = "";
+            $workflow->created_by = auth()->user()->id;
+
+            $workflow->save();
+
+           // $WorkflowObj = Workflow::get($workflow, $requestType->type);
+
+
+            return $workflow;
+
+
         } catch (\Exception $ex) {
             throw $ex;
         }
 
+    }
+
+    /**
+     * Updates workflow
+     * @param $workflow
+     * @param $requestStatus
+     * @param $isOpen
+     * @param null $userNote
+     * @param null $requestText
+     * @param null $requestData
+     * @return bool
+     * @throws \Exception
+     */
+    public function updateWorkflow($workflow, $requestStatus, $isOpen,$userNote = null,$requestText = null,$requestData = null )
+    {
+
+        try {
+            $workflowLog = [
+                'request_workflow_id' => $workflow->id,
+                'from_request_status_id' => $workflow->request_workflow_status_id,
+                'to_request_status_id' => $requestStatus,
+                'from_emp_id' => $workflow->assigned_to_user_id,
+                'to_emp_id' => $workflow->requester_id,
+                'log_date' => Carbon::now(),
+                'action' => 'Request Updated',
+                'supervisor_comment' => 'Workflow updated',
+                'is_closed' => true,
+            ];
+
+            //Create new log
+            app(WorkflowLogRepository::class)->create($workflowLog);
+            $notificationRepo = app('Modules\Workflow\Repositories\NotificationRepository');
+
+            //update workflow
+            $workflow->request_workflow_status_id = $requestStatus;
+            $workflow->request_status_id = $requestStatus;
+            $workflow->is_open = $isOpen;
+
+            if($requestText !== null){
+                $workflow->request_text = $requestText;
+            }
+
+            if($userNote !== null){
+                $workflow->user_note = $userNote;
+            }
+
+            if($requestData != null){
+                $workflow->request_data = $requestData;
+            }
+
+            $workflow->save();
+
+            return true;
+
+        } catch (\Exception $ex) {
+            throw  $ex;
+        }
     }
 
     /**
@@ -98,17 +187,13 @@ class EloquentWorkflowRepository extends EloquentBaseRepository implements Workf
      */
     public function isApproved($workflowId)
     {
-
         try {
-
             $objWorkflow = $this->find($workflowId);
             return ($objWorkflow->request_workflow_status_id == STATUS_APPROVED);
 
         } catch (\Exception $ex) {
             throw $ex;
         }
-
-
     }
 
     /**
@@ -137,7 +222,6 @@ class EloquentWorkflowRepository extends EloquentBaseRepository implements Workf
      */
     public function getUserRequests($userId, $with = [], $noOfRequests = 10)
     {
-
         try {
             return $this->model->with($with)
                 ->where('requester_id', '=', $userId)
@@ -149,8 +233,6 @@ class EloquentWorkflowRepository extends EloquentBaseRepository implements Workf
         } catch (\Exception $ex) {
             throw $ex;
         }
-
-
     }
 
 
@@ -196,79 +278,100 @@ class EloquentWorkflowRepository extends EloquentBaseRepository implements Workf
      * @return \Illuminate\Database\Eloquent\Collection|\Illuminate\Support\Collection|static[]
      * @throws \Exception
      */
-    public function getAssignedRequests($userId, $with = [], $requestTypeIds, $noOfRecords = 10)
+    public function getAssignedRequests($user, $with = [], $requestTypeIds, $noOfRecords = 10)
     {
-
         //Get all the requests assigned to user also check the requests in workflowlog as if forwarded to other user the current user will no be in workflow table)
         try {
 
-            $query = $this->model->with($with)
-                ->where('is_open', '=', true)
-                ->where(function ($query) use ($userId) {
-                    $query->whereIn('id', function ($query) use ($userId) {
-                        $query->select(DB::raw('request_workflow_id'))
-                            ->from('workflow__workflowlogs')->where('from_emp_id', '=', $userId);
-                    })->orWhere('assigned_to_user_id', '=', $userId);
-                })
-                ->orderBy('datetime_added', 'desc');
+            if($user->hasRoleId(ADMIN_USER_ROLE)){
+
+                $query = $this->model->with($with)
+                    ->where('is_open', '=', true)
+                    ->orderBy('datetime_added', 'desc');
+            }
+            else{
+                $employee = app(EmployeeRepository::class)->findByAttributes(['user_id'=>$user->id]);
+
+                $query = $this->model->with($with)
+                    ->where('is_open', '=', true)
+                    ->where(function ($query) use ($employee) {
+                        $query->whereIn('id', function ($query) use ($employee) {
+                            $query->select(DB::raw('request_workflow_id'))
+                                ->from('workflow__workflowlogs')->where('from_emp_id', '=', $employee->user_id)
+                                ->orWhere('from_designation_id', '=', $employee->designation_id)
+                                ->orWhere('from_department_id','=',$employee->department_id);
+                        })
+                            ->orWhere('assigned_to_user_id', '=', $employee->user_id)
+                            ->orWhere(function($query) use($employee){
+                                $query->whereNull('assigned_to_user_id')
+                                    ->where('assigned_to_designation_id','=',$employee->designation_id);
+                            })
+                            ->orWhere(function($query) use($employee)    {
+                                $query->whereNull('assigned_to_user_id')
+                                    ->whereNull('assigned_to_designation_id')
+                                    ->where('assigned_to_department_id','=',$employee->department_id);
+                            });
+                    })
+                    ->orderBy('datetime_added', 'desc');
+            }
+
             if (count($requestTypeIds) > 0) {
                 $query = $query->whereIn('request_type_id', $requestTypeIds);
             }
 
-            return $query->take($noOfRecords)->get();
+            return Datatables::of($query)
+                ->addColumn('chkbox',function ($workflow){
+                    return '<input type="checkbox" name="ids[]" value="'. $workflow->id .'">';
+                })
+                ->addColumn('id', function ($workflow) {
+                    return  $workflow->id;
+                })
+                ->addColumn('date',function($workflow){
+                    return Carbon::parse($workflow->request_date)->format(PHP_DATE_FORMAT);
 
+                })
+                ->addColumn('assigned_by',function($workflow){
+                    return $workflow->assignedBy->present()->fullname();
+                })
+                ->addColumn('type',function($workflow){
+                    if($workflow->requestType->details_route !== null && $workflow->requestType->details_route !== ''){
+                        return link_to_route($workflow->requestType->details_route,$workflow->requestType->type,$workflow->request_ref_id);
+                    }
+                    else{
+                        return $workflow->requestType->type;
+                    }
+
+                })
+                ->addColumn('status',function($workflow){
+                    return $workflow->requestStatus->status;
+                })
+                ->addColumn('user_note',function($workflow){
+                    return $workflow->user_note;
+                })
+                ->addColumn('request_text',function($workflow){
+                    return htmlspecialchars_decode($workflow->request_text);
+                })
+                ->addColumn('assigned_to',function($workflow) {
+                    if($workflow->assigned_to_user_id != null){
+                        return $workflow->assigned_to->present()->fullname();
+                    }
+                    elseif ($workflow->assigned_to_designation_id != null){
+                        return $workflow->assignedDesignation->designation;
+                    }
+                    else{
+                        return $workflow->assignedDepartment->name . ' Department' ;
+                    }
+                })
+                ->addColumn('actions',function($workflow) use($user) {
+                    return WorkflowService::getWorkflowTransitions($workflow,$user);
+                })
+                ->rawColumns(['request_text','chkbox'])
+                ->make(true);
         } catch (\Exception $ex) {
             throw  $ex;
         }
     }
 
-    /**
-     * Updates the workflow and send notification
-     * @param $workflow
-     * @param $requestStatus
-     * @param $isClosed
-     * @param $notifyToUserId
-     * @param null $requestTypeId
-     * @param null $notificationHeader
-     * @param null $notificationMessage
-     * @param null $notificationGroupId
-     * @param null $loggedInUserId
-     * @return bool
-     * @throws \Exception
-     */
-    public function updateWorkflow($workflow, $requestStatus, $isClosed, $notifyToUserId, $requestTypeId = null, $notificationHeader = null, $notificationMessage = null, $notificationGroupId = null, $loggedInUserId = null)
-    {
-
-        try {
-            $workflowLog = [
-                'request_workflow_id' => $workflow->id,
-                'from_request_status_id' => $workflow->request_workflow_status_id,
-                'to_request_status_id' => $requestStatus,
-                'from_emp_id' => $workflow->assigned_to_user_id,
-                'request_workflow_status_id' => $requestStatus,
-                'to_emp_id' => $workflow->requester_id,
-                'log_date' => Carbon::now(),
-                'action' => 'Request cancelled',
-                'supervisor_comment' => 'Workflow updated',
-                'is_closed' => true,
-            ];
-
-            //Create new log
-            app('Modules\Workflow\Repositories\WorkflowLogRepository')->create($workflowLog);
-            $notificationRepo = app('Modules\Workflow\Repositories\NotificationRepository');
-
-            //update workflow
-            $workflow->request_workflow_status_id = $requestStatus;
-            $workflow->request_status_id = $requestStatus;
-            $workflow->is_open = !$isClosed;
-            $workflow->save();
-
-            return true;
-
-        } catch (\Exception $ex) {
-            throw  $ex;
-        }
-    }
 
     /**
      * Approve Workflow
@@ -464,5 +567,78 @@ class EloquentWorkflowRepository extends EloquentBaseRepository implements Workf
         } catch (\Exception $ex) {
             throw  $ex;
         }
+    }
+
+    /**
+     * Apply given transition on the Workflow
+     * @param Workflow $workflow
+     * @param $transition
+     * @param string $userNote
+     */
+    public function applyTransition(Workflow $workflow,$transition,$userNote =  ""){
+        $workflowSeq = WorkflowService::getWorkflowSequence($workflow);
+        $workflowSeq->apply($workflow,$transition);
+        $workflow->user_note =  $userNote;
+        $workflow->save();
+    }
+
+    /**
+     *  Apply given transition on the Workflow
+     * @param $workflowIds
+     * @param $transition
+     * @param string $userNote
+     * @return array
+     */
+    public function applyBulkTransition($workflowIds,$transition,$userNote =  ""){
+
+
+
+        $workflows = $this->allWithBuilder()->whereIn('id',$workflowIds)->with(['requestType','assignedBy'])->get();
+
+        $result =[];
+
+        $count  = count($workflows);
+        $counter = 0;
+
+        session()->put('buklWorkflowId',$workflowIds);
+        session()->put('bulkTransitionInProgress',true);
+        session()->put('lastBulkTransition',false);
+
+        foreach ($workflows as $workflow){
+            $workflowSeq = WorkflowService::getWorkflowSequence($workflow);
+            try{
+
+                if (++$counter === $count){
+                    session()->put('lastBulkTransition',true);
+                }
+
+                $workflowSeq->apply($workflow,$transition);
+                $workflow->user_note =  $userNote;
+                $workflow->save();
+
+                array_push($result,[
+                    'id'=>$workflow->id,
+                    'request_type' => $workflow->requestType->type,
+                    'success' => true,
+                    'message' =>  trans('workflow::workflows.'.$workflow->requestType->type . '.'.$transition.'.text') .' successfull for '.$workflow->requestType->type.' id('. $workflow->request_ref_id .') from '. $workflow->assignedBy->present()->fullname() .' '. $transition . ' successfully'
+                ]);
+            }
+            catch (\Exception $ex){
+                array_push($result,[
+                    'id'=>$workflow->id,
+                    'request_type' => $workflow->requestType->type,
+                    'success' => false,
+                    'message' => 'Failed '. trans('workflow::workflows.'.$workflow->requestType->type . '.'.$transition.'.text').' for '.$workflow->requestType->type.' id('. $workflow->request_ref_id .') from '. $workflow->assignedBy->present()->fullname() .' '.$ex->getMessage()
+                ]);
+            }
+
+        }
+
+        session()->remove('buklWorkflowId');
+        session()->remove('bulkTransitionInProgress');
+        session()->remove('bulkLastTransition');
+
+
+        return collect($result);
     }
 }

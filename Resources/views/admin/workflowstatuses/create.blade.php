@@ -16,29 +16,22 @@
 @stop
 
 @section('content')
-    {!! Form::open(['route' => ['admin.workflow.workflowstatus.store'], 'method' => 'post']) !!}
+    {!! Former::open_horizontal('create-status')
+            ->route('admin.workflow.workflowstatus.store')
+            ->method('post')
+    !!}
     <div class="row">
-        <div class="col-md-12">
-            <div class="nav-tabs-custom">
-                @include('partials.form-tab-headers')
-                <div class="tab-content">
-                    <?php $i = 0; ?>
-                    @foreach (LaravelLocalization::getSupportedLocales() as $locale => $language)
-                        <?php $i++; ?>
-                        <div class="tab-pane {{ locale() == $locale ? 'active' : '' }}" id="tab_{{ $i }}">
-                            @include('workflow::admin.workflowstatuses.partials.create-fields', ['lang' => $locale])
-                        </div>
-                    @endforeach
-
-                    <div class="box-footer">
-                        <button type="submit" class="btn btn-primary btn-flat">{{ trans('core::core.button.create') }}</button>
-                        <a class="btn btn-danger pull-right btn-flat" href="{{ route('admin.workflow.workflowstatus.index')}}"><i class="fa fa-times"></i> {{ trans('core::core.button.cancel') }}</a>
-                    </div>
+        <div class="col-md-8">
+            <div class="box">
+                @include('workflow::admin.workflowstatuses.partials.create-fields')
+                <div class="box-footer">
+                    <button type="submit" class="btn btn-primary btn-flat">{{ trans('core::core.button.create') }}</button>
+                    <a class="btn btn-danger pull-right btn-flat" href="{{ route('admin.workflow.workflowstatus.index')}}"><i class="fa fa-times"></i> {{ trans('core::core.button.cancel') }}</a>
                 </div>
-            </div> {{-- end nav-tabs-custom --}}
+            </div>
         </div>
     </div>
-    {!! Form::close() !!}
+    {!! Former::close() !!}
 @stop
 
 @section('footer')
@@ -53,20 +46,29 @@
 
 @section('scripts')
     <script type="text/javascript">
+
         $( document ).ready(function() {
+            initializeUI()
+        });
+
+        function initializeUI() {
+
+            $('input[type="checkbox"].flat-blue, input[type="radio"].flat-blue').iCheck({
+                checkboxClass: 'icheckbox_flat-blue',
+                radioClass: 'iradio_flat-blue'
+            });
+
+            $('select').select2({
+                allowClear: true,
+                placeholder: $(this).data('placeholder')
+            });
+
             $(document).keypressAction({
                 actions: [
                     { key: 'b', route: "<?= route('admin.workflow.workflowstatus.index') ?>" }
                 ]
             });
-        });
-    </script>
-    <script>
-        $( document ).ready(function() {
-            $('input[type="checkbox"].flat-blue, input[type="radio"].flat-blue').iCheck({
-                checkboxClass: 'icheckbox_flat-blue',
-                radioClass: 'iradio_flat-blue'
-            });
-        });
+        }
+
     </script>
 @stop

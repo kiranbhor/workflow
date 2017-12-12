@@ -37,22 +37,23 @@ class RegisterWorkflowSidebar implements \Maatwebsite\Sidebar\SidebarExtender
     public function extendWith(Menu $menu)
     {
          $menu->group(trans('core::sidebar.content'), function (Group $group) {
+
+             $group->item('Received Requests', function (Item $item) {
+                 $item->icon('fa fa-arrow-down');
+                 $item->weight(0);
+                 $item->route('admin.workflow.workflow.getAssignedRequests');
+                 $item->authorize(
+                     $this->auth->hasAccess('workflow.workflows.index')
+                 );
+             });
+
+
             $group->item(trans('workflow::notifications.title.module heading'), function (Item $item) {
                 $item-> icon('fa fa-copy');
                 $item->weight(0);
                 $item->authorize(
-                     /* append */
+                    $this->auth->hasAccess('workflow.module.index')
                 );
-
-                $item->item('Received Requests', function (Item $item) {
-                    $item->icon('fa fa-arrow-down');
-                    $item->weight(0);
-                    $item->route('admin.workflow.workflow.getAssignedRequests');
-                    $item->authorize(
-                        $this->auth->hasAccess('workflow.workflows.index')
-                    );
-                });
-
 
                 $item->item(trans('workflow::notifications.title.notifications'), function (Item $item) {
                     $item->icon('fa fa-copy');

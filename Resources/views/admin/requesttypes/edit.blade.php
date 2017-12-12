@@ -16,29 +16,39 @@
 @stop
 
 @section('content')
-    {!! Form::open(['route' => ['admin.workflow.requesttype.update', $requesttype->id], 'method' => 'put']) !!}
+
+    {!! Former::populate($requesttype) !!}
+
+    {!!
+        Former::horizontal_open()
+            ->route('admin.workflow.requesttype.update',$requesttype->id)
+            ->method('PUT')
+    !!}
+
+    {{   csrf_field() }}
+
     <div class="row">
         <div class="col-md-12">
-            <div class="nav-tabs-custom">
-                @include('partials.form-tab-headers')
-                <div class="tab-content">
-                    <?php $i = 0; ?>
-                    @foreach (LaravelLocalization::getSupportedLocales() as $locale => $language)
-                        <?php $i++; ?>
-                        <div class="tab-pane {{ locale() == $locale ? 'active' : '' }}" id="tab_{{ $i }}">
-                            @include('workflow::admin.requesttypes.partials.edit-fields', ['lang' => $locale])
-                        </div>
-                    @endforeach
-
-                    <div class="box-footer">
-                        <button type="submit" class="btn btn-primary btn-flat">{{ trans('core::core.button.update') }}</button>
-                        <a class="btn btn-danger pull-right btn-flat" href="{{ route('admin.workflow.requesttype.index')}}"><i class="fa fa-times"></i> {{ trans('core::core.button.cancel') }}</a>
-                    </div>
+            <div class="box box-primary">
+                <div class="box-header with-border">
+                    <h3 class="box-title">New Request</h3>
                 </div>
-            </div> {{-- end nav-tabs-custom --}}
+
+                <div class="box-body">
+                    @include('workflow::admin.requesttypes.partials.create-fields')
+                </div>
+
+                <div class="box-footer">
+                    <button type="submit" class="btn btn-primary pull-right">Save</button>
+                </div>
+
+
+            </div>
         </div>
     </div>
-    {!! Form::close() !!}
+    {!!
+       Former::close()
+    !!}
 @stop
 
 @section('footer')
@@ -59,14 +69,18 @@
                     { key: 'b', route: "<?= route('admin.workflow.requesttype.index') ?>" }
                 ]
             });
+
+            initializeUI();
         });
     </script>
-    <script>
-        $( document ).ready(function() {
-            $('input[type="checkbox"].flat-blue, input[type="radio"].flat-blue').iCheck({
-                checkboxClass: 'icheckbox_flat-blue',
-                radioClass: 'iradio_flat-blue'
+    <script type="text/javascript">
+
+        function initializeUI() {
+            $('select').select2({
+                allowClear: true,
+                placeholder: $(this).data('placeholder')
             });
-        });
+        }
+
     </script>
 @stop

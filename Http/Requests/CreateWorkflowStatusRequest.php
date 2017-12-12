@@ -10,9 +10,7 @@ class CreateWorkflowStatusRequest extends BaseFormRequest
     {
         return [
             'status' => 'required|max:255',
-            'sequence_no' => 'required|max:255',
-            'label_class' => 'required|max:255',
-            'is_closing_status' => 'required|max:255'
+            'sequence_no' => 'required|max:255'
         ];
     }
 

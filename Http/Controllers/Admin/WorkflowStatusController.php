@@ -5,7 +5,11 @@ namespace Modules\Workflow\Http\Controllers\Admin;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Mockery\Exception;
+use Modules\Master\Repositories\DepartmentRepository;
+use Modules\Master\Repositories\DesignationRepository;
+use Modules\User\Repositories\UserRepository;
 use Modules\Workflow\Entities\WorkflowStatus;
 use Modules\Workflow\Http\Requests\CreateWorkflowStatusRequest;
 use Modules\Workflow\Http\Requests\UpdateWorkflowStatusRequest;
@@ -26,7 +30,7 @@ class WorkflowStatusController extends AdminBaseController
      */
     private $auth;
 
-    public function __construct(WorkflowStatusRepository $workflowstatus)
+    public function __construct(WorkflowStatusRepository $workflowstatus,Authentication $auth)
     {
         parent::__construct();
 
@@ -54,7 +58,31 @@ class WorkflowStatusController extends AdminBaseController
      */
     public function create()
     {
-        return view('workflow::admin.workflowstatuses.create');
+        $requestTypes = app(RequestTypeRepository::class)->allWithBuilder()
+            ->orderBy('type')
+            ->pluck('type','id');
+
+        $employees = app(UserRepository::class)->all()
+            ->where('user_type_id','=',EMPLOYEE_USER_TYPE)
+            ->pluck('first_name','id');
+
+        $departments = app(DepartmentRepository::class)->allWithBuilder()
+            ->orderBy('name')
+            ->pluck('name','id');
+
+        $designations = app(DesignationRepository::class)->allWithBuilder()
+            ->orderBy('designation')
+            ->pluck('designation','id');
+
+        $data = [
+           'requestTypes' => $requestTypes,
+           'employees' => $employees,
+           'departments' => $departments,
+           'designations' => $designations
+        ];
+
+
+        return view('workflow::admin.workflowstatuses.create',$data);
     }
 
     /**
@@ -65,15 +93,7 @@ class WorkflowStatusController extends AdminBaseController
      */
     public function store(CreateWorkflowStatusRequest $request)
     {
-        $data = [
-            'status'=> $request->status,
-            'sequence_no'=>$request->sequence_no,
-            'label_class'=>$request->label_class,
-            'is_closing_status'=>$request->is_closing_status,
-            'request_type_id'=>$request->request_type_id,
-            'created_by'=> $this->auth->user()->id
-        ];
-        $this->workflowstatus->create($data);
+
         $this->workflowstatus->create($request->all());
 
         return redirect()->route('admin.workflow.workflowstatus.index')
@@ -88,7 +108,30 @@ class WorkflowStatusController extends AdminBaseController
      */
     public function edit(WorkflowStatus $workflowstatus)
     {
-        return view('workflow::admin.workflowstatuses.edit', compact('workflowstatus'));
+        $requestTypes = app(RequestTypeRepository::class)->allWithBuilder()
+            ->orderBy('type')
+            ->pluck('type','id');
+
+        $employees = app(UserRepository::class)->all()
+            ->where('user_type_id','=',EMPLOYEE_USER_TYPE)
+            ->pluck('first_name','id');
+
+        $departments = app(DepartmentRepository::class)->allWithBuilder()
+            ->orderBy('name')
+            ->pluck('name','id');
+
+        $designations = app(DesignationRepository::class)->allWithBuilder()
+            ->orderBy('designation')
+            ->pluck('designation','id');
+
+        $data = [
+            'requestTypes' => $requestTypes,
+            'employees' => $employees,
+            'departments' => $departments,
+            'designations' => $designations,
+            'workflowstatus' => $workflowstatus
+        ];
+        return view('workflow::admin.workflowstatuses.edit',$data);
     }
 
     /**
@@ -100,14 +143,7 @@ class WorkflowStatusController extends AdminBaseController
      */
     public function update(WorkflowStatus $workflowstatus, UpdateWorkflowStatusRequest $request)
     {
-        $workflowstatus = $this->workflowstatus->find($request->category_id);
-        $data = [
-            'status'=> $request->status,
-            'sequence_no'=>$request->sequence_no,
-            'label_class'=>$request->label_class,
-            'is_closing_status'=>$request->is_closing_status,
-        ];
-        $this->workflowstatus->update($workflowstatus, $data);
+        $this->workflowstatus->update($workflowstatus, $request->all());
 
         return redirect()->route('admin.workflow.workflowstatus.index')
             ->withSuccess(trans('core::core.messages.resource updated', ['name' => trans('workflow::workflowstatuses.title.workflowstatuses')]));

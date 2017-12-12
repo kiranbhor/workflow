@@ -23,4 +23,37 @@ return [
     ],
     'validation' => [
     ],
+
+    //Order workflow transition
+    'Order'=>[
+        'admin_approved' => [
+            'html' => '<span class="btn btn-flat btn-default"><i class="glyphicon glyphicon-ok"></i>Approve</span>',
+            'text' => 'Approve'
+        ],
+        'accountant_approved' => [
+            'html' => '<span class="btn btn-flat btn-default"><i class="glyphicon glyphicon-ok"></i>Approve</span>',
+            'text' => 'Approve'
+        ],
+        'admin_rejected' => [
+            'html' =>'<span class="btn btn-flat btn-default"><i class="glyphicon glyphicon-ok"></i>Reject</span>',
+            'text' =>'Reject'
+        ],
+        'account_rejected' => [
+            'html' => '<span class="btn btn-flat btn-default"><i class="glyphicon glyphicon-ok"></i>Reject</span>',
+            'text' => 'Reject'
+        ],
+        'create_invoice' => [
+            'html' => '<span class="btn btn-flat btn-default"><i class="glyphicon glyphicon-ok"></i>Create Invoice</span>',
+            'text' => 'Create Invoice'
+        ],
+        're_open' => [
+            'html' => '<span class="btn btn-flat btn-default"><i class="glyphicon glyphicon-ok"></i>Reopen</span>',
+            'text' => 'Re-open'
+        ],
+        'invoice'=>[
+            'html' => '<span class="btn btn-flat btn-default"><i class="glyphicon glyphicon-ok"></i>Generate Invoice</span>',
+            'text' => 'Generate Invoice'
+        ]
+    ]
 ];
+

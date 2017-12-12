@@ -12,6 +12,33 @@ class WorkflowStatus extends Model
 
     protected $table = 'workflow__workflowstatuses';
     public $translatedAttributes = [];
-    protected $guarded =['id'];
+
+    public $fillable = [
+        'status',
+        'sequence_no',
+        'label_class',
+        'is_closing_status',
+        'request_type_id',
+        'created_by',
+        'assign_to_employee',
+        'assign_to_designation',
+        'assign_to_department',
+        'worklow_place'
+    ];
+
     protected $dates = ['deleted_at'];
+
+
+    public function __toString()
+    {
+        return $this->status;
+    }
+
+    /**
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function requestType(){
+        return $this->belongsTo(RequestType::class,'request_type_id','id');
+    }
+
 }

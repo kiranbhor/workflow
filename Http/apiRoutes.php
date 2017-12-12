@@ -35,14 +35,6 @@ $router->group(['middleware' => ['api.token','web']], function (Router $router) 
         'middleware' =>'token-can:workflow.workflows.destroySelected'
     ]);
 
-
-    $router->get('workflows/getReceivedRequest', [
-        'as' => 'api.workflow.workflows.getReceivedRequest',
-        'uses' => 'WorkflowController@getAssignedRequests',
-        'middleware' =>'token-can:workflow.workflows.index'
-    ]);
-
-
     $router->post('approveRequest', [
         'as' => 'api.workflow.workflows.postApproveRequest',
         'uses' => 'WorkflowController@postApproveRequest',

@@ -2,6 +2,7 @@
 
 namespace Modules\Workflow\Http\Controllers\Admin;
 
+use App\DataTables\WorkflowDataTable;
 use App\Exceptions\ActionNotAllowedException;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -12,8 +13,8 @@ use Modules\Workflow\Entities\Workflow;
 use Modules\Workflow\Http\Requests\CreateWorkflowRequest;
 use Modules\Workflow\Http\Requests\UpdateWorkflowRequest;
 use Modules\Workflow\Repositories\WorkflowRepository;
-
-
+use Modules\Workflow\Workflows\WorkflowService;
+use Workflow as WorkflowSeq;
 
 class WorkflowController extends AdminBaseController
 {
@@ -43,22 +44,112 @@ class WorkflowController extends AdminBaseController
      */
     public function index()
     {
-        $workflows = $this->workflow
-            ->getUserRequests($this->auth->user()->id, ['assignedBy', 'requestType', 'status']);
+        //Workflow test
 
-        return view('workflow::admin.workflows.index', compact('workflows'));
+        $post = $this->workflow->find(13);
+        $workflow = WorkflowSeq::get($post, 'Order');
+
+        $transitions = $workflow->getEnabledTransitions($post);
+        // Get the post transitions
+        foreach ($transitions as $transition) {
+            echo $transition->getName() . ' ' .$workflow->can($post, $transition->getName());
+            echo '<br/>';
+        }
+//
+//        echo'<br/>';
+//        $workflow->apply($post,'placed');
+//        $transitions = $workflow->getEnabledTransitions($post);
+//        // Get the post transitions
+//        foreach ($transitions as $transition) {
+//            echo $transition->getName() . ' ' .$workflow->can($post, $transition->getName());
+//            echo '<br/>';
+//        }
+//        echo'<br/>';
+//
+//        $workflow->apply($post,ORDER_TRANSTN_ACCUNTANT_APPROVED);
+//
+//        $transitions = $workflow->getEnabledTransitions($post);
+//        // Get the post transitions
+//        foreach ($transitions as $transition) {
+//            echo $transition->getName() . ' ' .$workflow->can($post, $transition->getName());
+//            echo '<br/>';
+//        }
     }
-    
-     /**
-     * Display a listing of the resource.
-     *
-     * @return Response
+
+
+//    public function testDatatable(Request $request){
+//        return view('datatables.list_wrapper', [
+//            'entityType' => ENTITY_WORKFLOW,
+//            'datatable' => new WorkflowDatatable(),
+//            'title' => trans('texts.clients'),
+//            'statuses' => ['deleted'],
+//        ]);
+//    }
+
+
+    public function testDatatable(Request $request,WorkflowDataTable $dataTable){
+
+        $data = [
+            'entityType' => ENTITY_WORKFLOW,
+            'datatable' => new WorkflowDatatable(),
+            'title' => trans('texts.clients'),
+            'statuses' => ['deleted'],
+        ];
+
+        return $dataTable->render('datatables.list_wrapper',$data);
+    }
+
+
+    public function getDatatable(Request $request){
+        return "asd";
+    }
+
+    /**
+     * Get requests assigned to user using and return response for datatables
+     * @param Request $request
+     * @return mixed
      */
-    public function getAssignedRequests()
+    public function getAssignedRequests(Request $request)
     {
-        $requestTypes = app(getRepoName('RequestType','Workflow'))->all();
-        return view('workflow::admin.workflows.assignedrequests',compact('requestTypes'));
+        try {
+
+            if($request->ajax()) {
+
+                $user = $this->auth->user();
+                $requestTypes = json_decode($request->typeVal);
+
+                return $this->workflow->getAssignedRequests($user, [
+                    'assignedBy','status','requestType', 'requestStatus', 'assignedTo', 'assignedDepartment', 'assignedDesignation'
+                ], $requestTypes);
+            }
+            else{
+                $requestTypes = app(getRepoName('RequestType','Workflow'))->all();
+
+                $allTransitions = WorkflowService::getAllRegisteredTransitions();
+
+                $bulkActions = [];
+
+                foreach ($allTransitions as $transition){
+                    array_push($bulkActions,[
+                            'label' => $transition['full_name'],
+                            'url' => 'javascript:submitForm("'.$transition['name'].'")',
+                        ]);
+                }
+
+                return view('workflow::admin.workflows.assignedrequests',compact('requestTypes','bulkActions'));
+            }
+
+        } catch (ActionNotAllowedException $ex) {
+            return response()->json([
+                'success' => false,
+                'message' => trans('core::errors.messages.action-not-allowed', ['operation' => 'approve this request']),
+            ]);
+        } catch (\Execption $ex) {
+            return response()->json(['success' => false, 'message' => trans('core::errors.messages.something went wrong', ['operation' => 'approving request'])]);
+        }
     }
+
+
 
     /**
      * @param $workflowId
@@ -384,5 +475,67 @@ class WorkflowController extends AdminBaseController
 
     }
 
+    /**
+     * Apply give transition to workflow
+     * @param Workflow $workflow
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function applyTransition(Workflow $workflow,Request $request){
+
+        $this->workflow->applyTransition($workflow,$request->transition,$request->user_note);
+
+        if($request->ajax()){
+            return response()->json(['success' => true, 'message' => 'Request Processed successfully']);
+        }
+    }
+
+    /**
+     * Handles bulk action
+     * @param Request $request
+     * @return mixed
+     */
+    public function bulk(Request $request){
+        $message = 'No requests processed';
+
+        try{
+
+            DB::beginTransaction();
+
+            $results = $this->workflow->applyBulkTransition($request->ids,$request->action,$request->user_note);
+
+            $successMessages =  $results->filter(function($result){
+                return $result['success'] == true;
+            });
+
+            $failedMessages =  $results->filter(function($result){
+                return $result['success'] == false;
+            });
+
+            $message = count($successMessages) . ' Successful, '. count($failedMessages) .' Failed <br>';
+
+            foreach ($successMessages as $result){
+                $message .=  ('<li class="">'.$result['message'].'</li>');
+            }
+
+            $message .= '<br>';
+
+            foreach ($failedMessages as $result){
+                $message .=  ('<li class="">'.$result['message'].'</li>');
+            }
+
+            DB::commit();
+
+        }
+        catch (\Exception $ex){
+            DB::rollback();
+        }
+
+        return redirect()->back()
+            ->withInfo($message);
+    }
+
 
 }
+
+

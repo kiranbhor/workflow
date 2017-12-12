@@ -1,5 +1,7 @@
 <?php
 
+
+
 if (! function_exists('getRequestTypeId')) {
     function getRequestTypeId($requestType)
     {
@@ -27,7 +29,6 @@ if (! function_exists('getRequestStatusId')) {
         }
     }
 }
-
 
 if (! function_exists('getTaskStatusId')) {
     function getTaskStatusId($taskStatus)
@@ -57,28 +58,6 @@ if (! function_exists('getWorkflowStatusId')) {
     }
 }
 
-
-if (! function_exists('getRepoName')) {
-    function getRepoName($entity,$module)
-    {
-        $repoName = "Modules\\". ucfirst($module)."\\Repositories\\".ucfirst($entity)."Repository";
-        if($repoName == null){
-            throw new \Exception("Repo " . $module ."//".$entity ." not found");
-        }
-        else{
-            return $repoName;
-        }
-    }
-}
-
-if (! function_exists('getRepoNameByArray')) {
-    function getRepoNameByArray($repoName)
-    {
-        $array = explode(",",$repoName);
-        return getRepoName($array[1],$array[0]);
-    }
-}
-
 if (! function_exists('getRequestTypeName')) {
     function getRequestTypeName($name)
     {
@@ -97,5 +76,7 @@ if (! function_exists('getLeaveSessionName')) {
 
     }
 }
+
+
 
 

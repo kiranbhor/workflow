@@ -2,19 +2,19 @@
 
 namespace Modules\Workflow\Http\Controllers\Admin;
 
-use Illuminate\Http\Request;
+
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Auth;
-use Mockery\Exception;
+use Modules\Master\Repositories\DepartmentRepository;
+use Modules\Master\Repositories\DesignationRepository;
 use Modules\Workflow\Entities\RequestType;
 use Modules\Workflow\Http\Requests\CreateRequestTypeRequest;
 use Modules\Workflow\Http\Requests\UpdateRequestTypeRequest;
 use Modules\Workflow\Repositories\RequestTypeRepository;
-use Modules\User\Repositories\UserRepository;
-use Modules\Profile\Repositories\DesignationRepository;
+
 use Modules\Core\Http\Controllers\Admin\AdminBaseController;
 use Modules\User\Contracts\Authentication;
-use Illuminate\Support\Facades\Log;
+use Modules\Workflow\Repositories\WorkflowStatusRepository;
+
 
 class RequestTypeController extends AdminBaseController
 {
@@ -42,11 +42,14 @@ class RequestTypeController extends AdminBaseController
      */
     public function index()
     {
+
         $requesttypes = $this->requesttype->all();
-        $requestuser = app('Modules\User\Repositories\UserRepository');
-        $designation = app('Modules\Profile\Repositories\DesignationRepository');
-        $requestuserid = $requestuser->all(['id','first_name'],'first_name');
-        $profiledesignation =$designation->all('id','designation');
+
+        $profiledesignation = app('Modules\Master\Repositories\DesignationRepository')->all('id','designation');
+
+        $requestuserid =  app('Modules\User\Repositories\UserRepository')
+            ->all(['id','first_name'],'first_name');
+
 
         return view('workflow::admin.requesttypes.index', compact('requestuserid','requesttypes','profiledesignation'));
     }
@@ -58,7 +61,33 @@ class RequestTypeController extends AdminBaseController
      */
     public function create()
     {
-        return view('workflow::admin.requesttypes.create');
+        $requestTypes = $this->requesttype->allWithBuilder()
+            ->orderby('type')
+            ->pluck('type','id');
+
+        $departments = app(DepartmentRepository::class)->allWithBuilder()
+            ->orderBy('name')
+            ->pluck('name','id');
+
+        $designations = app(DesignationRepository::class)->allWithBuilder()
+            ->orderBy('designation')
+            ->pluck('designation','id');
+
+        $requestStatus = app(WorkflowStatusRepository::class)->allWithBuilder()
+            ->orderBy('status')
+            ->pluck('status','id');
+
+
+        $data = [
+            'requestTypes' => $requestTypes,
+            'departments' => $departments,
+            'designations' => $designations,
+            'requestStatus' => $requestStatus
+        ];
+
+
+
+        return view('workflow::admin.requesttypes.create',$data);
     }
 
     /**
@@ -69,28 +98,7 @@ class RequestTypeController extends AdminBaseController
      */
     public function store(CreateRequestTypeRequest $request)
     {
-        $data = [
-            'type' =>$request->type,
-            'parent_request_id' =>$request->parent_request_id,
-            'sequence_no' =>$request->sequence_no,
-            'description' =>$request->description,
-            'send_email_notification' =>$request->send_email_notification,
-            'default_assignee_user_id' =>$request->default_assignee_user_id,
-            'default_designation_id' =>$request->default_designation_id,
-            'default_dept_id' =>$request->default_dept_id,
-            'notification_group_id' =>$request->notification_group_id,
-            'closing_status_ids' =>$request->closing_status_ids,
-            'validity_days' =>$request->validity_days,
-            'additional_emails_to_notify' =>$request->additional_emails_to_notify,
-            'notify_to_supervisor' =>$request->notify_to_supervisor,
-            'initial_request_status_id' =>$request->initial_request_status_id,
-            'assign_to_supervisor' =>$request->assign_to_supervisor,
-            'update_request_route' =>$request->update_request_route,
-            'create_request_route' =>$request->create_request_route,
-            'repository' =>$request->repository,
-            'created_by'=> $this->auth->user()->id
-        ];
-        $this->requesttype->create($data);
+        $this->requesttype->createNew($request->all());
 
         return redirect()->route('admin.workflow.requesttype.index')
             ->withSuccess(trans('core::core.messages.resource created', ['name' => trans('workflow::requesttypes.title.requesttypes')]));
@@ -104,7 +112,34 @@ class RequestTypeController extends AdminBaseController
      */
     public function edit(RequestType $requesttype)
     {
-        return view('workflow::admin.requesttypes.edit', compact('requesttype'));
+        $requestTypes = $this->requesttype->allWithBuilder()
+            ->orderby('type')
+            ->pluck('type','id');
+
+        $departments = app(DepartmentRepository::class)->allWithBuilder()
+            ->orderBy('name')
+            ->pluck('name','id');
+
+        $designations = app(DesignationRepository::class)->allWithBuilder()
+            ->orderBy('designation')
+            ->pluck('designation','id');
+
+        $requestStatus = app(WorkflowStatusRepository::class)->allWithBuilder()
+            ->orderBy('status')
+            ->pluck('status','id');
+
+
+        $data = [
+            'requestTypes' => $requestTypes,
+            'departments' => $departments,
+            'designations' => $designations,
+            'requestStatus' => $requestStatus,
+            'requesttype' => $requesttype
+        ];
+
+
+
+        return view('workflow::admin.requesttypes.edit', $data);
     }
 
     /**
@@ -116,27 +151,8 @@ class RequestTypeController extends AdminBaseController
      */
     public function update(RequestType $requesttype, UpdateRequestTypeRequest $request)
     {
-        $requesttype = $this->requesttype->find($request->category_id);
-        $data = [
-            'type' =>$request->type,
-            'parent_request_id' =>$request->parent_request_id,
-            'sequence_no' =>$request->sequence_no,
-            'description' =>$request->description,
-            'send_email_notification' =>$request->send_email_notification,
-            'notification_group_id' =>$request->notification_group_id,
-            'closing_status_ids' =>$request->closing_status_ids,
-            'validity_days' =>$request->validity_days,
-            'additional_emails_to_notify' =>$request->additional_emails_to_notify,
-            'notify_to_supervisor' =>$request->notify_to_supervisor,
-            'initial_request_status_id' =>$request->initial_request_status_id,
-            'assign_to_supervisor' =>$request->assign_to_supervisor,
-            'update_request_route' =>$request->update_request_route,
-            'create_request_route' =>$request->create_request_route,
-            'repository' =>$request->repository
 
-
-        ];
-        $this->requesttype->update($requesttype, $data);
+        $this->requesttype->updateRequestType($requesttype, $request->all());
 
         return redirect()->route('admin.workflow.requesttype.index')
             ->withSuccess(trans('core::core.messages.resource updated', ['name' => trans('workflow::requesttypes.title.requesttypes')]));

@@ -21,7 +21,7 @@ class WorkflowTables extends Migration
             $table->engine = 'InnoDB';
             $table->increments('id');
             $table->string('type')->unique();
-            $table->integer('parent_request_id')->unsigned();
+            $table->integer('parent_request_id')->unsigned()->nullable();
             $table->integer('sequence_no')->nullable();
             $table->text('description')->nullable();
             $table->integer('default_assignee_user_id')->nullable();
@@ -81,7 +81,7 @@ class WorkflowTables extends Migration
             $table->integer('created_by')->nullable();
             $table->integer('updated_by')->nullable();
             $table->integer('deleted_by')->nullable();
-            $table->unique('status');
+            $table->unique(['status','request_type_id']);
             $table->timestamps();
             $table->softDeletes();
         });
@@ -113,26 +113,15 @@ class WorkflowTables extends Migration
         Schema::create('workflow__workflows', function (Blueprint $table) {
             $table->engine = 'InnoDB';
             $table->increments('id');
-            $table->integer('request_type_id')->unsigned()->nullable();
-            $table->foreign('request_type_id')->references('id')->on('workflow__requesttypes');
-
+            $table->unsignedInteger('request_type_id')->references('id')->on('workflow__requesttypes');
             $table->integer('request_ref_id')->nullable();
-
-            $table->integer('request_status_id')->unsigned()->nullable();
-            $table->foreign('request_status_id')->references('id')->on('workflow__workflowstatuses');
-
-            $table->integer('assigned_to_user_id')->unsigned()->nullable();
-            $table->foreign('assigned_to_user_id')->references('id')->on('users');
-
-            $table->integer('assigned_to_designation_id')->nullable();
-            $table->integer('assigned_to_department_id')->nullable();
+            $table->unsignedInteger('request_status_id')->references('id')->on('workflow__workflowstatuses');
+            $table->unsignedInteger('assigned_to_user_id')->references('id')->on('users')->nullable();
+            $table->integer('assigned_to_designation_id')->nullable()->nullable();
+            $table->integer('assigned_to_department_id')->nullable()->nullable();
             $table->integer('assignee_type_id')->nullable();
-
-            $table->integer('requester_id')->unsigned()->nullable();
-            $table->foreign('requester_id')->references('id')->on('users');
-
-            $table->integer('request_workflow_status_id')->unsigned()->nullable();
-            $table->foreign('request_workflow_status_id')->references('id')->on('workflow__workflowstatuses');
+            $table->unsignedInteger('requester_id')->references('id')->on('users');
+            $table->unsignedInteger('request_workflow_status_id')->references('id')->on('workflow__workflowstatuses');
 
             $table->date('request_date')->nullable();
             $table->boolean('is_expired')->nullable();
@@ -153,21 +142,11 @@ class WorkflowTables extends Migration
         Schema::create('workflow__workflowlogs', function (Blueprint $table) {
             $table->engine = 'InnoDB';
             $table->increments('id');
-
-            $table->integer('request_workflow_id')->unsigned();
-            $table->foreign('request_workflow_id')->references('id')->on('workflow__workflows');
-
-            $table->integer('from_request_status_id')->unsigned();
-            $table->foreign('from_request_status_id')->references('id')->on('workflow__workflowstatuses');
-
-            $table->integer('to_request_status_id')->unsigned();
-            $table->foreign('to_request_status_id')->references('id')->on('workflow__workflowstatuses');
-
-            $table->integer('from_emp_id')->unsigned();
-            $table->foreign('from_emp_id')->references('id')->on('users');
-
-            $table->integer('to_emp_id')->unsigned();
-            $table->foreign('to_emp_id')->references('id')->on('users');
+            $table->unsignedInteger('request_workflow_id')->references('id')->on('workflow__workflows');
+            $table->unsignedInteger('from_request_status_id')->references('id')->on('workflow__workflowstatuses');
+            $table->unsignedInteger('to_request_status_id')->references('id')->on('workflow__workflowstatuses');
+            $table->unsignedInteger('from_emp_id')->references('id')->on('users');
+            $table->unsignedInteger('to_emp_id')->references('id')->on('users');
 
             $table->integer('to_designation_id');
             $table->integer('to_department_id');

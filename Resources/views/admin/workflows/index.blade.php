@@ -16,6 +16,9 @@
 
 
 @section('content')
+
+
+
     <div class="row">
         <div class="col-xs-12">
             <div class="row">
@@ -188,15 +191,7 @@
                         },
                     },
                     { data: 'id'},
-                    { data: 'request_type.type',
-                        "render": function ( data, type, full, meta ) {
-                            var path = "{{ route('admin.workflow.workflows.getRequestDetails',["id"]) }}";
-                            var repath = path.replace("id",full.id);
-                            return '<a href="'+repath+'" class="detail-modal" id="get-details" data-toggle="modal" data-backdrop="static" data-keyboard="false" data-target="#commonModal2">'+data+'</a>';
-
-                        }
-
-                    },
+                    { data: 'request_type.type'},
                     { data: 'status.status' ,
                         "render": function ( data, type, full, meta ) {
                             if(data != null) {

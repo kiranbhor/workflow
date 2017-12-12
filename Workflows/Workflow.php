@@ -6,11 +6,29 @@
  * Time: 12:18 PM
  */
 
-namespace Modules\Workflow\Services;
+namespace Modules\Workflow\Workflows;
 
+
+use Symfony\Component\Workflow\Event\GuardEvent;
 
 interface Workflow
 {
+
+    /**
+     * Guard the workflow action
+     * @param GuardEvent $event
+     * @return mixed
+     */
+    public function guard(GuardEvent $event);
+
+    /**
+     * Apply Given transition to workflow
+     * @param $workflow
+     * @param $transition
+     * @return mixed
+     */
+    public function applyTransition($event,$workflowStatus);
+
     /**
      * Approves the given request
      * @param $requestId

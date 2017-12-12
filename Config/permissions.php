@@ -1,6 +1,10 @@
 <?php
 
 return [
+
+    'workflow.module' =>[
+        'index' => 'Show Workflow Module',
+    ],
     'workflow.requesttypes' => [
         'index' => 'workflow::requesttypes.list resource',
         'create' => 'workflow::requesttypes.create resource',
@@ -29,7 +33,8 @@ return [
         'getRequestDetails' => 'Get Request Details',
         'postApproveRequest' => 'Approve Reuqests',
         'postRejectRequest' => 'Reject Requests',
-        'postForwardRequest' => 'Forward Request'
+        'postForwardRequest' => 'Forward Request',
+        'apply-transition' => 'Approval'
 
     ],
     'workflow.workflowlogs' => [
@@ -50,7 +55,14 @@ return [
         'edit' => 'workflow::notificationsubscriptions.edit resource',
         'destroy' => 'workflow::notificationsubscriptions.destroy resource',
     ],
+    'workflow.workflowsequences' => [
+        'index' => 'workflow::workflowsequences.list resource',
+        'create' => 'workflow::workflowsequences.create resource',
+        'edit' => 'workflow::workflowsequences.edit resource',
+        'destroy' => 'workflow::workflowsequences.destroy resource',
+    ],
 // append
+
 
 
 

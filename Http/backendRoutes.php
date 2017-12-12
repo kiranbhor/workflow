@@ -74,11 +74,6 @@ $router->group(['prefix' =>'/workflow'], function (Router $router) {
         'uses' => 'RequestTypeController@update',
         'middleware' => 'can:workflow.requesttypes.edit'
     ]);
-    $router->post('requesttypes/update', [
-        'as' => 'admin.workflow.requesttype.update',
-        'uses' => 'RequestTypeController@update',
-        'middleware' => 'can:workflow.requesttypes.edit'
-    ]);
     $router->delete('requesttypes/{requesttype}', [
         'as' => 'admin.workflow.requesttype.destroy',
         'uses' => 'RequestTypeController@destroy',
@@ -93,23 +88,22 @@ $router->group(['prefix' =>'/workflow'], function (Router $router) {
     $router->bind('workflow', function ($id) {
         return app('Modules\Workflow\Repositories\WorkflowRepository')->find($id);
     });
+    $router->post('workflows/apply-transition/{workflow}', [
+        'as' => 'admin.workflow.workflow.applytransition',
+        'uses' => 'WorkflowController@applyTransition',
+        'middleware' => 'can:workflow.workflows.apply-transition'
+    ]);
+
     $router->get('workflows/myrequests', [
         'as' => 'admin.workflow.workflow.index',
         'uses' => 'WorkflowController@index',
         'middleware' => 'can:workflow.workflows.index'
     ]);
-
-
-    $router->get('workflows/mylist', [
+    $router->get('workflows/assigned-to-me', [
         'as' => 'admin.workflow.workflow.getAssignedRequests',
         'uses' => 'WorkflowController@getAssignedRequests',
         'middleware' => 'can:workflow.workflows.index'
     ]);
-
-
-
-
-
     $router->get('workflows/create', [
         'as' => 'admin.workflow.workflow.create',
         'uses' => 'WorkflowController@create',
@@ -139,6 +133,24 @@ $router->group(['prefix' =>'/workflow'], function (Router $router) {
         'as' => 'admin.workflow.workflows.getRequestDetails',
         'uses' => 'WorkflowController@getRequestDetails',
         'middleware' =>'can:workflow.workflows.index'
+    ]);
+
+    $router->get('workflows/testDatatable', [
+        'as' => 'admin.workflow.workflows.testDatatable',
+        'uses' => 'WorkflowController@testDatatable',
+        'middleware' =>'can:workflow.workflows.index'
+    ]);
+
+    $router->post('workflows/bulk', [
+        'as' => 'workflows.bulk',
+        'uses' => 'WorkflowController@bulk',
+        'middleware' =>'can:workflow.workflows.edit'
+    ]);
+
+    $router->post('api/workflows', [
+        'as' => 'api.workflows.index',
+        'uses' => 'WorkflowController@getDatatable',
+        'middleware' =>'can:workflow.workflows.edit'
     ]);
 
 
@@ -257,16 +269,12 @@ $router->group(['prefix' =>'/workflow'], function (Router $router) {
         'uses' => 'WorkflowStatusController@edit',
         'middleware' => 'can:workflow.workflowstatuses.edit'
     ]);
-//    $router->put('workflowstatuses/{workflowstatus}', [
-//        'as' => 'admin.workflow.workflowstatus.update',
-//        'uses' => 'WorkflowStatusController@update',
-//        'middleware' => 'can:workflow.workflowstatuses.edit'
-//    ]);
-    $router->post('workflowstatuses/update', [
+    $router->put('workflowstatuses/{workflowstatus}', [
         'as' => 'admin.workflow.workflowstatus.update',
         'uses' => 'WorkflowStatusController@update',
         'middleware' => 'can:workflow.workflowstatuses.edit'
     ]);
+
     $router->delete('workflowstatuses/{workflowstatus}', [
         'as' => 'admin.workflow.workflowstatus.destroy',
         'uses' => 'WorkflowStatusController@destroy',
@@ -305,7 +313,41 @@ $router->group(['prefix' =>'/workflow'], function (Router $router) {
         'uses' => 'NotificationSubscriptionController@destroy',
         'middleware' => 'can:workflow.notificationsubscriptions.destroy'
     ]);
+    $router->bind('workflowsequence', function ($id) {
+        return app('Modules\Workflow\Repositories\WorkflowSequenceRepository')->find($id);
+    });
+    $router->get('workflowsequences', [
+        'as' => 'admin.workflow.workflowsequence.index',
+        'uses' => 'WorkflowSequenceController@index',
+        'middleware' => 'can:workflow.workflowsequences.index'
+    ]);
+    $router->get('workflowsequences/create', [
+        'as' => 'admin.workflow.workflowsequence.create',
+        'uses' => 'WorkflowSequenceController@create',
+        'middleware' => 'can:workflow.workflowsequences.create'
+    ]);
+    $router->post('workflowsequences', [
+        'as' => 'admin.workflow.workflowsequence.store',
+        'uses' => 'WorkflowSequenceController@store',
+        'middleware' => 'can:workflow.workflowsequences.create'
+    ]);
+    $router->get('workflowsequences/{workflowsequence}/edit', [
+        'as' => 'admin.workflow.workflowsequence.edit',
+        'uses' => 'WorkflowSequenceController@edit',
+        'middleware' => 'can:workflow.workflowsequences.edit'
+    ]);
+    $router->put('workflowsequences/{workflowsequence}', [
+        'as' => 'admin.workflow.workflowsequence.update',
+        'uses' => 'WorkflowSequenceController@update',
+        'middleware' => 'can:workflow.workflowsequences.edit'
+    ]);
+    $router->delete('workflowsequences/{workflowsequence}', [
+        'as' => 'admin.workflow.workflowsequence.destroy',
+        'uses' => 'WorkflowSequenceController@destroy',
+        'middleware' => 'can:workflow.workflowsequences.destroy'
+    ]);
 // append
+
 
 
 });

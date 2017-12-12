@@ -4,6 +4,7 @@ namespace Modules\Workflow\Http\Controllers\Api;
 
 use App\Exceptions\ActionNotAllowedException;
 use App\Exceptions\CustomErrorException;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
@@ -11,7 +12,7 @@ use Illuminate\Support\Facades\Log;
 use Modules\User\Contracts\Authentication;
 use Modules\Workflow\Repositories\WorkflowRepository;
 use DataTables;
-
+use Workflow;
 
 class WorkflowController extends Controller
 {
@@ -114,32 +115,7 @@ class WorkflowController extends Controller
         }
     }
 
-    /**
-     * Get requests assigned to user using and return response for datatables
-     * @param Request $request
-     * @return mixed
-     */
-    public function getAssignedRequests(Request $request)
-    {
 
-        $workflows = [];
-        try {
-            $requestTypes = json_decode($request->typeVal);
-
-            $workflows = $this->workflow->getAssignedRequests($this->auth->user()->id, [
-                    'assignedBy', 'requestType', 'requestStatus', 'assignedTo'
-                ], $requestTypes);
-            return Datatables::of($workflows)->make(true);
-        } catch (ActionNotAllowedException $ex) {
-            return response()->json(['success' => false,
-                'message' => trans('core::errors.messages.action-not-allowed', ['operation' => 'approve this request']),
-                'workflows' => $workflows]);
-        } catch (\Execption $ex) {
-            return response()->json(['success' => false, 'message' => trans('core::errors.messages.something went wrong', ['operation' => 'approving request'])]);
-        }
-
-
-    }
 
     /**
      * Approved the workflow

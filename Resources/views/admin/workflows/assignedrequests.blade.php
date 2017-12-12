@@ -12,13 +12,11 @@
     </ol>
 @stop
 
-@section('styles')
-
-    {!! Theme::style('vendor/eonasdan-bootstrap-datetimepicker/build/css/bootstrap-datetimepicker.css') !!}
-    {!! Theme::style('vendor/admin-lte/plugins/select2/select2.min.css') !!}
-
-@stop
 @section('content')
+    {!! Former::open(route('workflows.bulk'))
+		->addClass('listForm') !!}
+
+    {!! Former::hidden('action')->id('action') !!}
     <div class="row">
         <div class="col-xs-12">
             <div class="row">
@@ -26,64 +24,69 @@
 
                 </div>
             </div>
-
-
             <div class="box box-primary">
                 <div class="box-header">
+                    <div>
+                        <div class="pull-left" >
+                            {!! DropdownButton::normal('Actions')
+                                    ->withContents($bulkActions)
+                                    ->withAttributes(['class'=>'action'])
+                                    ->split() !!}
+                        </div>
+                        <div class="col-md-4">
+                            {!! Former::multiselect('request_type_id')
+                                    ->data_placeholder('Type')
+                                    ->label('Request Type')
+                                    ->fromQuery($requestTypes,'type','id')
+                                    ->raw()
+                            !!}
+                        </div>
+                        <div class="col-md-4">
+                            {!! Former::multiselect('request_status_id')
+                                  ->data_placeholder('Status')
+                                  ->label('Request Type')
+                                  ->fromQuery($requestTypes,'type','id')
+                                  ->raw()
+                          !!}
+                        </div>
+                        <div id="top_right_buttons" class="pull-right">
+
+                        </div>
+                    </div>
                 </div>
                 <!-- /.box-header -->
                 <div class="box-body">
-                    <div class="row">
-                        <div class="col-md-4"></div>
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                {!! Form::label('request_type_id', 'Request Type') !!}
-                                <select  class="form-control" name="request_type_id" id="request_type_id" placeholder="Select Request" multiple>
-                                    <?php foreach ($requestTypes as $requestType): ?>
-                                    <option value="{{ $requestType->id }}">{{ $requestType->type }}</option>
-                                    <?php endforeach;?>
-                                </select>
-                            </div>
-                        </div>
+                    <div class="table-responsive">
+                        <table class="data-table table table-bordered table-hover">
+                            <thead>
+                            <tr>
+                                <th>
+                                    <input type="checkbox" class="selectAll" >
+                                </th>
+                                <th>Id</th>
+                                <th>Date</th>
+                                <th>Assigned By</th>
+                                <th>Type</th>
+                                <th>Status</th>
+                                <th>User Note</th>
+                                <th>Details</th>
+                                <th>Assigned To</th>
+                                <th>{{ trans('core::core.table.actions') }}</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                            <tfoot>
+
+                            </tfoot>
+                        </table>
                     </div>
-                    <table class="data-table table table-bordered table-hover">
-                        <thead>
-                        <tr>
-                            <th id="select">Select</th>
-                            <th>Id</th>
-                            <th>User</th>
-                            <th>Type</th>
-                            <th>Status</th>
-                            <th>User Note</th>
-                            <th>Details</th>
-                            <th>Assigned To</th>
-                            <th>Date</th>
-                            <th>{{ trans('core::core.table.actions') }}</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        </tbody>
-                        <tfoot>
-                        <tr>
-                            <th id="select">Select</th>
-                            <th>Id</th>
-                            <th>User</th>
-                            <th>Type</th>
-                            <th>Status</th>
-                            <th>User Note</th>
-                            <th>Details</th>
-                            <th>Assigned To</th>
-                            <th>Date</th>
-                            <th>{{ trans('core::core.table.actions') }}</th>
-                        </tr>
-                        </tfoot>
-                    </table>
-                    <!-- /.box-body -->
                 </div>
                 <!-- /.box -->
             </div>
         </div>
     </div>
+    {!! Former::close() !!}
 
 
     <!-- Modal -->
@@ -110,6 +113,42 @@
         <!-- /.modal-dialog -->
     </div>
     <!-- /.modal -->
+
+
+    <!-- Transition Modal -->
+    <div class="modal fade" id="apply-transition-modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="false">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                    <h4 class="modal-title" id="myModalLabel">{{'Approve Request'}}</h4>
+                </div>
+                <div class="modal-body">
+                    <input type ="hidden" id="workflow_id" name = "workflow_id" value = "" >
+                    <p>
+                        Do you really want to <span id="type" value=""></span> from <span id="name" value=""></span>.
+                    </p>
+                    <P>
+                    <div>
+                        {!! Form::label('user_note', 'Please provide your comments') !!}
+                        <textarea name="user_note" id="user_note" class="form-control" value="{{Input::old('user_note') }}" placeholder="Note">{{Input::old('user_note') }}</textarea>
+                        {!! $errors->first('user_note', '<span class="help-block">:message</span>') !!}
+                    </div>
+                    </P>
+                    <input type="hidden" id="transition">
+                </div>
+                <div class="modal-footer">
+
+                    <button type="button" class="btn btn-primary btn-flat" data-dismiss="modal">{{ trans('core::core.button.cancel') }}
+                    </button>
+
+                    <a type="submit" id="transition-button" onClick="applyTransition()">
+                    </a>
+
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- ApproveModal -->
     <div class="modal fade" id="approveModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="false">
@@ -227,7 +266,6 @@
 @stop
 
 @section('scripts')
-    {!! Theme::script('vendor/admin-lte/plugins/select2/select2.min.js') !!}
 
     <script type="text/javascript">
         $( document ).ready(function() {
@@ -242,24 +280,54 @@
     <?php $locale = locale();?>
     <script type="text/javascript">
         var selectedWorkflows = [];
-        var tabl;
-        var userId = "{{$currentUser->id}}";
+        var workflowTable;
 
-        var pendingStatus = "{{STATUS_PENDING}}"
-        var approvedStatus = "{{STATUS_APPROVED}}";
-        var rejectedStatus = "{{STATUS_REJECTED}}";
-        var forwardedStatus = "{{STATUS_FORWARDED}}";
+        $( document ).ready(function() {
 
-
-
-        function attachSelectedWorkflows(){
-            $('.data-table').on('change','.dynamic-check-box',function() {
-                var workflowId =$(this).data('id');
-                selectedWorkflows.push(workflowId);
+            $('.selectAll').click(function() {
+                $(this).closest('table').find(':checkbox:not(:disabled)').prop('checked', this.checked);
             });
+
+            setBulkActionsEnabled();
+            initilizeUi();
+        });
+
+        /**
+         * Decides whether to enable bulk action
+         */
+        function setBulkActionsEnabled() {
+            var buttonLabel = "action";
+            var count = $('.listForm tbody :checkbox:checked').length;
+            $('.listForm button.action').prop('disabled', !count);
+            if (count) {
+                buttonLabel += ' (' + count + ')';
+            }
+            $('.button.action').not('.dropdown-toggle').text(buttonLabel);
         }
 
+        /**
+         * Decides whether to enable bulk action
+         */
         function attachActionEvent(){
+
+            selectedWorkflows = [];
+
+            $('.data-table').on('click','.transition-button',function() {
+                //check for multiple selection of users for approval
+                if(selectedWorkflows.length >1) {
+                    $('#name').text('all selected users');
+                }
+                else {
+                    $('#name').text($(this).data('name'));
+                }
+
+                $('#workflow_id').val($(this).data('id'));
+                $('#type').text($(this).data('text') + ' '+ $(this).data('requesttype'));
+                $('#transition').val($(this).data('transition'));
+                $('#transition-button').html($(this).data('html'));
+                $('#user_note').text('');
+
+            });
             $('.data-table').on('click','.approve-workflow',function() {
                 //check for multiple selection of users for approval
                 if(selectedWorkflows.length >1) {
@@ -273,7 +341,6 @@
                 $('#type').text($(this).data('requesttype'));
 
             });
-
             $('.data-table').on('click','.reject-workflow',function() {
 
                 //check for multiple selection of users for rejection
@@ -288,7 +355,6 @@
                 $('#rtype').text($(this).data('requesttype'));
 
             });
-
             $('.data-table').on('click','.forward-workflow',function() {
 
                 //check for multiple selection of users for forwarding
@@ -302,131 +368,60 @@
                 $('#ftype').text($(this).data('requesttype'));
 
             });
-        }
-
-        function fetchRequestedInfo() {
-            $(function () {
-                tabl = $('.data-table').dataTable({
-                    destroy:true,
-                    paginate: true,
-                    processing: true,
-                    serverSide: true,
-                    ajax: {
-                        "url": '{{ route("api.workflow.workflows.getReceivedRequest") }}',
-                        "data": function(d) {
-                            var typeValue  = [];
-                            if($("#request_type_id option:selected").attr('value') != -1) {
-                                $("#request_type_id option:selected").each(function () {
-                                    typeValue.push(this.value);
-                                });
-                            }
-                            d.typeVal = JSON.stringify(typeValue);
-                            d._token =  $('meta[name="token"]').attr('value')
-                        }
-
-                    },
-                    "lengthChange": true,
-                    "filter": true,
-                    "sort": true,
-                    "info": true,
-                    "autoWidth": true,
-                    "order": [[ 1, "desc" ]],
-                    "language": {
-                        "url": '<?php echo Module::asset("core:js/vendor/datatables/{$locale}.json") ?>'
-                    },
-                    "search": {
-                        "caseInsensitive": false
-                    },
-                    "fnRowCallback": function(nRow, aData, iDisplayIndex) {
-                        nRow.setAttribute('id',('workflow-row-'+aData['id']));
-                    },
-                    columns: [
-                        { data: 'select',
-                            "render": function ( data, type, full, meta ) {
-                                return '<input class="dynamic-check-box" name="check" type="checkbox" id="workflow_id_selected" data-id="'+full.id+'" class="flat-blue" />';
-                            },
-                        },
-                        { data: 'id'},
-                        { data:'assigned_by.first_name'},
-                        { data: 'request_type.type',
-
-                            "render": function ( data, type, full, meta ) {
-                                var path = "{{ route('admin.workflow.workflows.getRequestDetails',["id"]) }}";
-                                var repath = path.replace("id",full.id);
-
-                                return '<a href="'+repath+'" class="" data-toggle="modal" data-target="#commonModal2">'+data+'</a>';
-                            }
-
-                        },
-                        { data: 'request_status.status' ,
-                            "render": function ( data, type, full, meta ) {
-                                if(data != null) {
-                                    return  '<span class="status-span label ' + full.request_status.label_class+'" title="'+data+'">'+data+ '</span>';
-                                }
-                                else {
-                                    return 'NA';
-                                }
-                            },
-
-                        },
-                        { data: 'user_note' },
-                        { data: 'request_text' },
-                        { data: 'assigned_to.first_name'},
-                        { data: 'datetime_added' ,
-                            "render": function ( data, type, full, meta ) {
-                                return  '<span class="label label-primary" title = "'+moment(data).format('DD MMM YY HH:mm')+'">'+moment(data).format('DD MMM YY HH:mm')+'</span>';
-                            }
-                        },
-                        { data: 'id',
-                            "render": function ( data, type, full, meta ) {
-
-                                if(full.request_status_id != null) {
-                                    if(full.is_open == true ) {
-                                        if(full.assigned_to_user_id != userId) {
-
-                                            if(full.request_status_id==forwardedStatus) {
-                                                return '<span class="label label-default">Forwarded</span>';
-                                            }
-                                        }
-                                        else {
-
-                                            var responseHTML = '<div class="btn-group">';
-
-                                            if(full.request_status_id != approvedStatus && full.request_type.show_approve_btn == true){
-                                                responseHTML = responseHTML + '<a class="btn btn-default btn-flat approve-workflow" data-name="'+full.assigned_by.first_name+''+full.assigned_by.last_name+'" data-id="'+full.id+'" data-requesttype="'+full.request_type.type+'" data-toggle="modal" data-backdrop="static" data-keyboard="false" data-target="#approveModal"><i class="glyphicon glyphicon-ok" ></i></a>';
-                                            }
-
-                                            if(full.request_status_id != rejectedStatus && full.request_type.show_reject_btn	== true){
-                                                responseHTML = responseHTML + '<a class="btn btn-danger btn-flat reject-workflow" data-name="'+full.assigned_by.first_name+''+full.assigned_by.last_name+'" data-id="'+full.id+'" data-requesttype="'+full.request_type.type+'" data-toggle="modal" data-backdrop="static" data-keyboard="false" data-target="#rejectModal"><i class="glyphicon glyphicon-remove"></i></a>';
-                                            }
-
-                                            if(full.request_status_id != forwardedStatus && full.request_type.show_forward_btn	== true){
-                                                responseHTML = responseHTML + '<a class="btn btn-default btn-flat forward-workflow" data-name="'+full.assigned_by.first_name+''+full.assigned_by.last_name+'" data-id="'+full.id+'" data-requesttype="'+full.request_type.type+'" data-toggle="modal" data-backdrop="static" data-keyboard="false" data-target="#forwardModal"><i class="glyphicon glyphicon-forward"></i></a>';
-                                            }
-
-                                            return responseHTML + '</div>';
-                                        }
-                                    }
-                                    else {
-
-                                        return '<span class="label label-default">Closed</span>';
-                                    }
-                                }
-                                else {
-                                    return '<span class="label label-default">NA</span>';
-                                }
-
-                            }
-                        }
-                    ],
-
-                });
-                attachActionEvent();
-                attachSelectedWorkflows();
-
+            $('.data-table').on('change','.dynamic-check-box',function() {
+                var workflowId =$(this).data('id');
+                selectedWorkflows.push(workflowId);
             });
+
+            $(':checkbox').click(function() {
+                setBulkActionsEnabled();
+            });
+
+            $('.listForm tbody tr').unbind('click').click(function(event) {
+                if (event.target.type !== 'checkbox' && event.target.type !== 'button' && event.target.tagName.toLowerCase() !== 'a') {
+                    $checkbox = $(this).closest('tr').find(':checkbox:not(:disabled)');
+                    var checked = $checkbox.prop('checked');
+                    $checkbox.prop('checked', !checked);
+                    setBulkActionsEnabled();
+                }
+            });
+
         }
 
+        /**
+         * Apply Transition
+         */
+        function applyTransition() {
+            var workflowId = $('#workflow_id').val();
+            var path = '{{ route('admin.workflow.workflow.applytransition',["id"]) }}';
+            var repath = path.replace("id",workflowId);
+
+            $('#approveButton').prop('disabled',false);
+
+            $.ajax({
+                type: 'POST',
+                url: repath,
+                data:{
+                    'user_note' :$('#user_note').val(),
+                    'transition' :$('#transition').val(),
+                    '_token' :  $('meta[name="token"]').attr('value')
+                },
+                success: function(data) {
+                    if(data.success == true) {
+                        //swal("Approval", data.message,"success");
+                        alert("Approved");
+
+                    }
+                    else{
+                        //swal("Approval",data.message,"error");
+                        alert("Error");
+                    }
+                    $('#apply-transition-modal').modal('hide');
+                    workflowTable.fnDraw();
+                }
+            });
+
+        }
 
         /**
          *  Approve workflow
@@ -463,7 +458,6 @@
             });
 
         }
-
 
         /**
          *
@@ -503,7 +497,6 @@
 
         }
 
-
         /**
          * Forword Workflow
          */
@@ -539,16 +532,97 @@
         }
 
 
-        $( document ).ready(function() {
-            $("#request_type_id").select2({
-                placeholder: "Select Request"
-            }).on('change',function() {
-                fetchRequestedInfo();
+        /**
+         * Generates link for transition
+         * @param transition
+         * @param workflow
+         * @returns {string}
+         */
+        function getTransitionLink(transition,workflow){
+            return '<a  class="transition-button"  data-html="'+ transition.html +'"  data-name="'+ workflow.assigned_by + '" data-requesttype="'+ workflow.request_type.type + '" data-toggle="modal" data-target="#apply-transition-modal" data-text = "' + transition.text +'" data-id = "'+workflow.id +'" data-transition="'+ transition.name +'">'+ htmlUnescape(transition.html) +'</a>';
+        }
+
+        /**
+         * Escape HTML charactors
+         * @param str
+         */
+        function htmlUnescape(str){
+            return str
+                .replace(/&quot;/g, '"')
+                .replace(/&#39;/g, "'")
+                .replace(/&lt;/g, '<')
+                .replace(/&gt;/g, '>')
+                .replace(/&amp;/g, '&');
+        }
+
+        /**
+         * Initialize a UI
+         */
+        function initilizeUi(){
+
+            workflowTable = $('.data-table').dataTable({
+                processing: true,
+                serverSide: true,
+                ajax: {
+                    "url": '{{ route("admin.workflow.workflow.getAssignedRequests") }}',
+                    "type":"get",
+                    "data": function(d) {
+                        d.typeVal = JSON.stringify($("#request_type_id").val());
+                        d._token =  '{{ csrf_token() }}';
+                    },
+                },
+                "drawCallback": function(settings, json) {
+                    attachActionEvent();
+                },
+                columns: [
+                    { data: 'chkbox',orderable: false},
+                    { data: 'id'},
+                    { data: 'date'},
+                    { data: 'assigned_by'},
+                    { data: 'type'},
+                    { data: 'status' },
+                    { data: 'user_note',orderable: false,  },
+                    { data: 'request_text',orderable: false, },
+                    { data: 'assigned_to'},
+                    { data: 'actions',orderable: false,
+                        render: function ( data, type, full, meta ){
+                            var html = '<div class="btn-group">';
+                            $.each(full.actions,function(index,action){
+                                html += getTransitionLink(action,full);
+                            });
+                            html += '</div>';
+
+                            return html;
+                        }
+                    }
+                ],
+
             });
 
-            fetchRequestedInfo();
 
-        });
+            $("#request_type_id , #request_status_id").select2({
+                allowClear: true,
+                placeholder: $(this).data('placeholder')
+            }).on('change',function() {
+                workflowTable.fnDraw();
+            });
+        }
+
+
+
+        function submitForm(action, id) {
+            $('#action').val(action);
+
+            if (id) {
+                $('#public_id').val(id);
+            }
+
+            $('form.listForm').submit();
+        }
 
     </script>
+
+
+
+
 @stop

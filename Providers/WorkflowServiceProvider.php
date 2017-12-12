@@ -27,7 +27,7 @@ class WorkflowServiceProvider extends ServiceProvider
     {
         $this->registerBindings();
         $this->app['events']->listen(BuildingSidebar::class, RegisterWorkflowSidebar::class);
-	$this->registerViewComposers();
+	    $this->registerViewComposers();
     }
 
     public function boot()
@@ -146,7 +146,20 @@ class WorkflowServiceProvider extends ServiceProvider
                 return new \Modules\Workflow\Repositories\Cache\CacheNotificationSubscriptionDecorator($repository);
             }
         );
+        $this->app->bind(
+            'Modules\Workflow\Repositories\WorkflowSequenceRepository',
+            function () {
+                $repository = new \Modules\Workflow\Repositories\Eloquent\EloquentWorkflowSequenceRepository(new \Modules\Workflow\Entities\WorkflowSequence());
+
+                if (! config('app.cache')) {
+                    return $repository;
+                }
+
+                return new \Modules\Workflow\Repositories\Cache\CacheWorkflowSequenceDecorator($repository);
+            }
+        );
 // add bindings
+
 
 
 

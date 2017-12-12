@@ -2,6 +2,7 @@
 
 namespace Modules\Workflow\Repositories\Eloquent;
 
+use Modules\Workflow\Entities\WorkflowStatus;
 use Modules\Workflow\Repositories\WorkflowStatusRepository;
 use Modules\Core\Repositories\Eloquent\EloquentBaseRepository;
 
@@ -29,4 +30,5 @@ class EloquentWorkflowStatusRepository extends EloquentBaseRepository implements
             'is_closing_status'=>true
         ],$columns,'sequence_no');
     }
+
 }

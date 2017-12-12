@@ -9,19 +9,22 @@
         <li class="active">{{ trans('workflow::workflowstatuses.title.workflowstatuses') }}</li>
     </ol>
 @stop
-@section('styles')
-    {!! Theme::script('vendor/admin-lte/plugins/select2/select2.min.js') !!}
-    {!! Theme::style('vendor/admin-lte/plugins/select2/select2.min.css') !!}
-@stop
-
 
 @section('content')
     <div class="row">
-        <div class="col-xs-8">
+        <div class="col-xs-12">
+            <div class="row">
+                <div class="btn-group pull-right" style="margin: 0 15px 15px 0;">
+                    <a href="{{ route('admin.workflow.workflowstatus.create') }}" class="btn btn-primary btn-flat" style="padding: 4px 10px;">
+                        <i class="fa fa-pencil"></i> {{ trans('workflow::workflowstatuses.button.create workflowstatus') }}
+                    </a>
+                </div>
+            </div>
+
             <div class="box box-primary" id="category-list">
                 <div class="box-header">
                 </div>
-                <!-- /.box-header -->
+
                 <div class="box-body">
                     <div class="table-responsive">
                         <table id="filetypedategory-table" class="data-table table table-bordered table-hover">
@@ -48,11 +51,7 @@
                                 <td>{{ $workflowstatus->sequence_no }}</td>
                                 <td>{{ $workflowstatus->label_class }}</td>
                                 <td>{{ $workflowstatus->is_closing_status }}</td>
-                                <td>
-                                    <a href="{{ route('admin.workflow.workflowpriority.edit', [$workflowstatus->id]) }}">
-                                        {{ $workflowstatus->request_type_id }}
-                                    </a>
-                                </td>
+                                <td>{{ (isset($workflowstatus->requestType)?$workflowstatus->requestType->type:'NA')}}</td>
                                 <td>
                                     <a href="{{ route('admin.workflow.workflowstatus.edit', [$workflowstatus->id]) }}">
                                         {{ $workflowstatus->created_at }}
@@ -60,7 +59,7 @@
                                 </td>
                                 <td>
                                     <div class="btn-group">
-                                        <a  class="btn btn-default btn-flat category-edit-button" data-status="{{ $workflowstatus->status }}" data-sequence_no="{{$workflowstatus->sequence_no}}" data-label_class="{{$workflowstatus->label_class}}" data-is_closing_status="{{$workflowstatus->is_closing_status}}" data-id="{{$workflowstatus->id}}"><i class="fa fa-pencil"></i></a>
+                                        <a  class="btn btn-default btn-flat category-edit-button" href="{{route('admin.workflow.workflowstatus.edit',$workflowstatus->id)}}"><i class="fa fa-pencil"></i></a>
                                         <button class="btn btn-danger btn-flat" data-toggle="modal" data-target="#modal-delete-confirmation" data-action-target="{{ route('admin.workflow.workflowstatus.destroy', [$workflowstatus->id]) }}"><i class="fa fa-trash"></i></button>
                                     </div>
                                 </td>
@@ -84,102 +83,6 @@
                         <!-- /.box-body -->
                     </div>
                 </div>
-                <!-- /.box -->
-            </div>
-            <div id ="update-div" class="box box-primary" hidden>
-                <div class="box-header with-border">
-                    <h3 class="box-title">Change Workflow Status</h3>
-                </div>
-                <!-- /.box-header -->
-                <!-- form start -->
-                {!! Form::open(['route' => ['admin.workflow.workflowstatus.update'], 'method' => 'post','id'=>'update-form']) !!}
-                <div class="box-body">
-                    <div class="form-group has-feedback {{ $errors->has('status') ? ' has-error has-feedback' : '' }}">
-                        <label for="type-status">Enter Status</label>
-                        <input type="text" class="form-control" id="status"  name = "status" autofocus placeholder="Enter Status" value="{{ old('status') }}">
-                        {!! $errors->first('status', '<span class="help-block">:message</span>') !!}
-                    </div>
-                    <div class="form-group" class="form-group has-feedback {{ $errors->has('sequence_no') ? ' has-error has-feedback' : '' }}">
-                        <label for="exampleSeqNumber">Enter Sequence Nuumber</label>
-                        <input type="text" class="form-control" name="sequence_no" id="sequence-no" placeholder="Enter Sequence Number" value="{{ old('sequence_no') }}">
-                        {!! $errors->first('sequence_no', '<span class="help-block">:message</span>') !!}
-                    </div>
-                    <div class="form-group" class="form-group has-feedback {{ $errors->has('label_class') ? ' has-error has-feedback' : '' }}">
-                        <label for="exampleLabelclass">Enter Label Class</label>
-                        <input type="text" class="form-control" name="label_class" id="label-class" placeholder="Enter Label Class" value="{{ old('label_class') }}">
-                        {!! $errors->first('label_class', '<span class="help-block">:message</span>') !!}
-                    </div>
-                    <div class="form-group" class="form-group has-feedback {{ $errors->has('is_closing_status') ? ' has-error has-feedback' : '' }}">
-                        <label for="closingStatus">Enter Closing Status</label>
-                        <input type="text" class="form-control" name="is_closing_status" id="is-closing-status" placeholder="Enter Closing Status" value="{{ old('is_closing_status') }}">
-                        {!! $errors->first('is_closing_status', '<span class="help-block">:message</span>') !!}
-                    </div>
-                    <input type="hidden" id="category-id" name="category_id">
-                    <input type="hidden" id="old-status" name="old_status">
-
-
-                </div>
-                <!-- /.box-body -->
-
-                <div class="box-footer">
-                    <button class="btn btn-primary pull-left" id="btn-cancel-update">Cancel</button>
-                    <button type="submit" class="btn btn-primary pull-right">Update</button>
-                </div>
-                {!! Form::close() !!}
-            </div>
-        </div>
-        <div class="col-xs-4">
-
-            <div class="box box-primary">
-                <div class="box-header with-border">
-                    <h3 class="box-title">New Workflow Priority</h3>
-                </div>
-                <!-- /.box-header -->
-                <!-- form start -->
-
-
-                {!! Form::open(['route' => ['admin.workflow.workflowstatus.store'], 'method' => 'post','id'=>'create-form']) !!}
-                <div class="box-body">
-                    <div class="form-group has-feedback {{ $errors->has('status') ? ' has-error has-feedback' : '' }}">
-                        <label for="type-status">Enter Status</label>
-                        <input type="text" class="form-control" id="status"  name = "status" autofocus placeholder="Enter Status">
-                        {!! $errors->first('status', '<span class="help-block">:message</span>') !!}
-                    </div>
-                    <div class="form-group" class="form-group has-feedback {{ $errors->has('sequence_no') ? ' has-error has-feedback' : '' }}">
-                        <label for="exampleSeqNumber">Enter Sequence Nuumber</label>
-                        <input type="text" class="form-control" name="sequence_no" id="sequence_no" placeholder="Enter Sequence Number">
-                        {!! $errors->first('sequence_no', '<span class="help-block">:message</span>') !!}
-                    </div>
-                    <div class="form-group" class="form-group has-feedback {{ $errors->has('label_class') ? ' has-error has-feedback' : '' }}">
-                        <label for="exampleLabelclass">Enter Label Class</label>
-                        <input type="text" class="form-control" name="label_class" id="label_class" placeholder="Enter Label Class">
-                        {!! $errors->first('label_class', '<span class="help-block">:message</span>') !!}
-                    </div>
-                    <div class="form-group" class="form-group has-feedback {{ $errors->has('is_closing_status') ? ' has-error has-feedback' : '' }}">
-                        <label for="closingStatus">Enter Closing Status</label>
-                        <input type="text" class="form-control" name="is_closing_status" id="is_closing_status" placeholder="Enter Closing Status">
-                        {!! $errors->first('is_closing_status', '<span class="help-block">:message</span>') !!}
-                    </div>
-                    <div class="form-group has-feedback {{ $errors->has('request_type_id') ? ' has-error has-feedback' : '' }}">
-                        <label for="type-name">Type</label>
-                        {!! $errors->first('request_type_id', '<span class="help-block">:message</span>') !!}
-                        <select class="itemName dropdown" id="itemName" name="request_type_id">
-                            <option></option>
-                            @foreach($requeststatusflow as $requesttype)
-                                <option value="{{$requesttype->id}}">
-                                    {{$requesttype->type}}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                </div>
-                <!-- /.box-body -->
-
-                <div class="box-footer">
-                    <button type="submit" class="btn btn-primary pull-right">Create</button>
-                </div>
-                {!! Form::close() !!}
             </div>
         </div>
     </div>
@@ -187,7 +90,7 @@
 @stop
 
 @section('footer')
-    <a data-toggle="modal" data-target="#keyboardShortcutsModal"><i class="fa fa-keyboard-o"></i></a> &nbsp;
+    <a data-toggle="modal" data-target="#keyboardShortcutsModal"><i class="fa fa-keyboard-o"></i></a> &nbsp
 @stop
 @section('shortcuts')
     <dl class="dl-horizontal">
@@ -275,7 +178,7 @@
         });
     </script>
     <script type="text/javascript" src="{{ asset('vendor/jsvalidation/js/jsvalidation.js')}}"></script>
-    {!!  JsValidator::formRequest('Modules\Workflow\Http\Requests\UpdatestatusRequest','#update-form')->render() !!}
-    {!!  JsValidator::formRequest('Modules\Workflow\Http\Requests\Statusrequest','#create-form')->render() !!}
+    {!!  JsValidator::formRequest('Modules\Workflow\Http\Requests\UpdateWorkflowStatusRequest','#update-form')->render() !!}
+    {!!  JsValidator::formRequest('Modules\Workflow\Http\Requests\CreateWorkflowStatusRequest','#create-form')->render() !!}
 
 @stop

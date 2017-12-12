@@ -4,16 +4,11 @@ namespace Modules\Workflow\Http\Requests;
 
 use Modules\Core\Internationalisation\BaseFormRequest;
 
-class CreateRequestTypeRequest extends BaseFormRequest
+class CreateWorkflowSequenceRequest extends BaseFormRequest
 {
     public function rules()
     {
-        return [
-            'type' => 'required|max:255',
-            'description' => 'required|max:255',
-            'closing_status_ids' => 'required',
-            'initial_request_status_id' => 'required|max:255'
-        ];
+        return [];
     }
 
     public function translationRules()
